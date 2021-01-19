@@ -12,7 +12,7 @@ def top_matches(word, lexicon, n=4):
 
 
 def closest_match(word, lexicon):
-    lexicon_vectors = lexicon.items()
+    lexicon_vectors = [(k, v) for k, v in lexicon.items()]
     closest = lexicon_vectors[0][0]
     distance = similarity(lexicon_vectors[0][1], word)
     for (label, vector) in lexicon_vectors:
