@@ -1,0 +1,4 @@
+py4j==0.10.7
+pypandoc==1.5
+pyspark==2.4.7
+spark-nlp==2.7.1
