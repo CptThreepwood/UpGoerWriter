@@ -53,23 +53,39 @@ class Translator:
         '''Create a translator using a spacy model (for vectors) and a target lexicon'''
         self.language_model = spacy.load(spacy_model)
         with open(os.path.join(LEXICON_DIR, target_lexicon) + '.txt') as lexicon_io:
-            lexicon = [
-                self.language_model.vocab[word.strip().lower()]
-                for word in lexicon_io.readlines()
-            ]
-        for word in lexicon:
+            self.target_lexicon = spacy.tokens.Doc(
+                self.language_model.vocab,
+                words=[w.strip().lower() for w in lexicon_io.readlines()]
+            )
+        for word in self.target_lexicon:
             if not word.has_vector:
+                ## This affects words in target_lexicon, presumably because everything's pointers
                 self.language_model.vocab.set_vector(word.norm_, self.create_vector(word.norm_))
-        self.target_lexicon = {word.norm_: word for word in lexicon}
+        self.lexicon_norms = [word.norm_ for word in self.target_lexicon]
+        self.lexicon_lemmas = [word.lemma_ for word in self.target_lexicon]
 
     def closest_target(self, word):
         '''Find the closest matching word in the target lexicon'''
-        if word.norm_ in self.target_lexicon:
+        # Keep punctuation or numbers
+        if word.is_punct or word.is_digit or word.is_space:
             return word.orth_
-        return max([
-            (target.orth_, word.similarity(target))
-            for target in self.target_lexicon.values()
+
+        # Pass through if the input isn't in the spacy model
+        if not word.has_vector:
+            print('No vector for {0} ({1})'.format(word.orth_, word.norm_))
+            return word.orth_
+
+        # If the word is already in the target lexicon, return it
+        if word.norm_ in self.lexicon_norms or word.lemma_ in self.lexicon_lemmas:
+            return word.orth_
+
+        # Find the word in the target with maximum spacy similarity (cosine)
+        best_match = max([
+            (target.text, word.similarity(target))
+            for target in self.target_lexicon
         ], key=lambda x: x[1])[0]
+        print('{0} -> {1}'.format(word, best_match))
+        return best_match
 
     def translate(self, document):
         '''
@@ -77,5 +93,13 @@ class Translator:
             Current default translation mechanism is one word at a time
         '''
         doc = self.language_model(document)
-        return ' '.join([self.closest_target(token) for token in doc])
+        token_end = 0
+        simplified = ''
+        for token in doc:
+            token_start = token.idx
+            simplified += document[token_end:token_start]
+            token_end = token_start + len(token.text)
+            simplified += self.closest_target(token)
+
+        return simplified
 

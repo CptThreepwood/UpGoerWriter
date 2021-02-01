@@ -1,1 +1,1 @@
-from ModelLoader import Translator
+from .ModelLoader import Translator
