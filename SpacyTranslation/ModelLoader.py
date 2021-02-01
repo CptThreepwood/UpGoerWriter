@@ -2,7 +2,7 @@ import os
 
 import spacy
 
-LEXICON_DIR = '../Lexica'
+LEXICON_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../Lexica')
 
 SUPPLEMENTARY_VECTORS = {
     "aren't": ['are', 'not'],
