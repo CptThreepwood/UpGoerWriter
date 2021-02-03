@@ -55,7 +55,7 @@ class Translator:
         with open(os.path.join(LEXICON_DIR, target_lexicon) + '.txt') as lexicon_io:
             self.target_lexicon = spacy.tokens.Doc(
                 self.language_model.vocab,
-                words=[w.strip().lower() for w in lexicon_io.readlines()]
+                words=[w.strip() for w in lexicon_io.readlines()]
             )
         for word in self.target_lexicon:
             if not word.has_vector:
