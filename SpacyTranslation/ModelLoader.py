@@ -1,6 +1,12 @@
 import os
+import glob
+import tarfile
 
+import boto3
 import spacy
+
+LOCAL_MODEL_DIR = '/tmp/models'
+S3_BUCKET = os.environ['S3_BUCKET']
 
 LEXICON_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../Lexica')
 
@@ -34,6 +40,32 @@ SUPPLEMENTARY_VECTORS = {
     "you've": ['you', 'have'],
 }
 
+
+def download_model_from_s3(model_name: str, local_path: str) -> str:
+    if not os.path.exists(os.path.dirname(local_path)):
+        os.makedirs(os.path.dirname(local_path))
+    local_compressed = f'{local_path}.tar.gz'
+
+    # download model is the archive doesn't exist
+    if not os.path.exists(local_compressed):
+        print('Downloading model...')
+        s3_prefix = f'models/{model_name}.tar.gz'
+        s3 = boto3.client('s3')
+        s3.download_file(S3_BUCKET, s3_prefix, local_compressed)
+
+    with tarfile.open(local_compressed) as f:
+        f.extractall(path=local_path)
+
+    return local_path
+
+
+def get_model_path(model_name):
+    local_path = os.path.join(LOCAL_MODEL_DIR, model_name)
+    if os.path.exists(local_path):
+        return local_path
+    return download_model_from_s3(model_name, local_path)
+
+
 class Translator:
     '''
         Translator Object contains a vector model, target lexicon and techniques for performing the translation
@@ -51,7 +83,7 @@ class Translator:
 
     def __init__(self, spacy_model='en_core_web_lg', target_lexicon='most_common_1000'):
         '''Create a translator using a spacy model (for vectors) and a target lexicon'''
-        self.language_model = spacy.load(spacy_model)
+        self.language_model = spacy.load(get_model_path(spacy_model))
         with open(os.path.join(LEXICON_DIR, target_lexicon) + '.txt') as lexicon_io:
             self.target_lexicon = spacy.tokens.Doc(
                 self.language_model.vocab,
