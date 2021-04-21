@@ -5,7 +5,7 @@ import tarfile
 import boto3
 import spacy
 
-LOCAL_MODEL_DIR = os.environ['LOCAL_MOEDEL_DIR']
+LOCAL_MODEL_DIR = os.environ['LOCAL_MODEL_DIR']
 S3_BUCKET = os.environ['S3_BUCKET']
 
 LEXICON_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../Lexica')
