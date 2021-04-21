@@ -83,7 +83,13 @@ class Translator:
 
     def __init__(self, spacy_model='en_core_web_lg', target_lexicon='most_common_1000'):
         '''Create a translator using a spacy model (for vectors) and a target lexicon'''
-        self.language_model = spacy.load(get_model_path(spacy_model))
+        try:
+            ## Try to load the model from a package
+            self.language_model = spacy.load(spacy_model)
+        except OSError as err:
+            ## If there is no matching package, try to load from local cache
+            self.language_model = spacy.load(get_model_path(spacy_model))
+
         with open(os.path.join(LEXICON_DIR, target_lexicon) + '.txt') as lexicon_io:
             self.target_lexicon = spacy.tokens.Doc(
                 self.language_model.vocab,
